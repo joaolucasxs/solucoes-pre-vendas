@@ -22,11 +22,12 @@ Infraestrutura híbrida: rede e servidor de arquivos local (latência e controle
 ```mermaid
 flowchart TB
     INET((Internet)) --> FW[Firewall FortiGate 60F]
-    FW --> SW[Switch 48 portas PoE]
-    SW --> AP1[Access Point Wi-Fi 6]
-    SW --> AP2[Access Point Wi-Fi 6]
-    SW --> SRV[Servidor de arquivos<br/>Dell PowerEdge T360]
-    SW --> PCS[50 estações]
+    FW --> SW1[Switch 48 portas PoE]
+    SW1 ---|uplink SFP| SW2[Switch 24 portas]
+    SW1 --> AP1[Access Point Wi-Fi 6]
+    SW1 --> AP2[Access Point Wi-Fi 6]
+    SW1 --> SRV[Servidor de arquivos<br/>Dell PowerEdge T360]
+    SW1 & SW2 --> PCS[50 estações + impressoras]
     SRV --> NAS[Backup local<br/>Synology NAS]
     NAS -. backup diário .-> CLOUD[(Backup em nuvem)]
     HO[10 usuários home office] -. VPN .-> FW
@@ -38,7 +39,8 @@ flowchart TB
 | # | Item | Fabricante / Modelo | Qtd | Função na solução | Preço est. (R$) |
 |---|---|---|---|---|---|
 | 1 | Firewall UTM | Fortinet FortiGate 60F + licença UTP 1 ano | 1 | Segurança de borda, VPN SSL para home office, filtro web | 7.500 |
-| 2 | Switch gerenciável PoE | Cisco CBS350-48P | 1 | Conecta estações, APs e servidor; PoE alimenta os APs | 9.000 |
+| 2 | Switch gerenciável PoE | Cisco CBS350-48P | 1 | Switch principal: APs, servidor, NAS, firewall e parte das estações; PoE alimenta os APs | 9.000 |
+| 2b | Switch gerenciável | Cisco CBS350-24T | 1 | Portas adicionais para o restante das estações e impressoras, ligado ao principal por uplink SFP | 4.000 |
 | 3 | Access Point Wi-Fi 6 | Ubiquiti U6 Pro | 2 | Cobertura Wi-Fi do andar, rede separada para visitantes | 2.400 |
 | 4 | Servidor de arquivos | Dell PowerEdge T360 (Xeon E, 32 GB, 2×4 TB RAID 1) | 1 | Arquivos centralizados, Active Directory, permissões por setor | 18.000 |
 | 5 | Licença servidor | Windows Server 2022 Standard + 50 CALs | 1 | Sistema operacional e licenciamento de acesso dos usuários | 9.500 |
@@ -47,11 +49,11 @@ flowchart TB
 | 8 | E-mail e colaboração | Microsoft 365 Business Standard | 50 × 12 meses | E-mail com domínio próprio, Teams, OneDrive, Office | 45.000 |
 | 9 | Nobreak | APC Smart-UPS 1500 VA | 2 | Proteção elétrica do rack (servidor, switch, firewall) | 5.000 |
 | 10 | Rack e cabeamento | Rack 12U + patch panel + 60 pontos Cat6 | 1 | Organização física e rede cabeada para as estações | 12.000 |
-| | **Total estimado (ano 1)** | | | | **~117.900** |
+| | **Total estimado (ano 1)** | | | | **~121.900** |
 
 ## 5. Justificativa das escolhas
 - **FortiGate 60F** — porte certo para 50 usuários com folga; VPN SSL inclusa resolve o home office sem produto extra; é a linha mais comum no mercado de parceiros, o que facilita suporte gerenciado.
-- **Switch PoE de 48 portas** — 50 estações + 2 APs + servidor + impressoras; PoE elimina fonte nos APs. Optei por 48 e não 24 para não precisar empilhar dois switches.
+- **Dois switches (48 PoE + 24)** — contagem de portas: 50 estações + 2 APs + servidor + NAS + firewall + 2 impressoras = 57 portas. Um switch de 48 não comporta; com 48 + 24 ficam 72 portas e cerca de 15 livres para crescimento. Só o principal precisa de PoE (para os APs), então o segundo é um modelo sem PoE, mais barato.
 - **Servidor local em vez de 100% nuvem** — escritório contábil move arquivos grandes o dia todo; servidor local dá latência zero e controle de permissão via Active Directory. RAID 1 protege contra falha de disco.
 - **Microsoft 365 Business Standard** — resolve e-mail, Teams e Office em uma assinatura; o plano *Basic* não inclui Office desktop, que contabilidade usa pesado (Excel).
 - **Backup em duas camadas (NAS + nuvem)** — NAS restaura rápido; nuvem protege contra ransomware, incêndio e furto. Regra 3-2-1.
@@ -69,3 +71,6 @@ flowchart TB
 - Preços são estimativas de referência (out/2026) com base em catálogos públicos de distribuidores e fabricantes; variam com câmbio e negociação
 - Mão de obra de instalação e suporte gerenciado não incluídos no BOM
 - Consultas: sites oficiais Fortinet, Cisco, Dell, Microsoft, Synology, Ubiquiti
+
+## 8. Histórico de revisões
+- **nov/2026** — Corrigido o dimensionamento da rede: a primeira versão previa um único switch de 48 portas, insuficiente para os 57 pontos necessários. Adicionado um segundo switch de 24 portas e atualizado o total. Lição: contar todos os dispositivos que se conectam antes de escolher o equipamento.
